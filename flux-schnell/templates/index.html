@@ -448,7 +448,7 @@
 
         if (data.download_url || data.url) {
           progressBar.style.width = '100%';
-          currentImageUrl = data.download_url || data.url;
+          currentImageUrl = location.origin + (data.download_url || data.url);
 
           output.src = currentImageUrl;
           output.onload = () => {
