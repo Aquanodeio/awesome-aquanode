@@ -1,34 +1,28 @@
-FROM pytorch/pytorch:2.5.1-cuda11.8-cudnn9-runtime
+FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
 
-ENV DEBIAN_FRONTEND=noninteractive \
+ENV PYTHONDONTWRITEBYTECODE=1 \
   PYTHONUNBUFFERED=1 \
-  MODEL_ID=black-forest-labs/FLUX.1-schnell \
   OUTPUT_DIR=/app/outputs \
-  BATCH_SIZE=6 \
-  BATCH_WAIT=0.05 \
-  REQ_TIMEOUT=30 \
-  MAX_QUEUE=256
-
-WORKDIR /app
+  LANG=C.UTF-8 LC_ALL=C.UTF-8
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  git curl wget libgl1 libglib2.0-0 libsm6 libxrender1 libxext6 libsndfile1 \
-  && rm -rf /var/lib/apt/lists/*
+  python3 python3-pip git wget && \
+  rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir \
-  git+https://github.com/huggingface/diffusers.git \
-  git+https://github.com/huggingface/transformers.git \
-  accelerate
+RUN python3 -m pip install --no-cache-dir --upgrade pip && \
+  pip install --no-cache-dir \
+  torch torchvision --index-url https://download.pytorch.org/whl/cu124 && \
+  pip install --no-cache-dir \
+  diffusers transformers accelerate huggingface_hub \
+  sentencepiece protobuf pillow fastapi "uvicorn[standard]" && \
+  rm -rf /root/.cache/pip
 
-COPY requirements.txt .
+WORKDIR /app
+COPY app.py .
+COPY templates ./templates
+COPY static ./static
 
-RUN pip install --no-cache-dir --upgrade pip setuptools \
-  && pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
-RUN mkdir -p ${OUTPUT_DIR}
-
+RUN mkdir -p $OUTPUT_DIR
 EXPOSE 7860
+ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
