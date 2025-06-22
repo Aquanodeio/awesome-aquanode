@@ -6,3 +6,4 @@ brotli-asgi==1.4.0
 pydantic==2.11.7
 xformers==0.0.30
 safetensors==0.5.3
+diffusers==0.33.1
