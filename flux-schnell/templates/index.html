@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>FLUX AI • Text-to-Image</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="/download" crossorigin>
+  <link rel="preconnect" href="https://your-api-host.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap" rel="stylesheet" media="print"
+    onload="this.media='all'">
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap" rel="stylesheet">
+  </noscript>
+  <script src="https://cdn.tailwindcss.com" defer></script>
+
+  <!-- Critical inline styles for above-the-fold content -->
+  <style>
+    /* Critical styles for immediate rendering */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+      min-height: 100vh;
+      color: #fff
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1rem
+    }
+
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2)
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text
+    }
+
+    .gradient-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)
+    }
+
+    .hidden {
+      display: none
+    }
+  </style>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'inter': ['Inter', 'system-ui', 'sans-serif'],
+          },
+          animation: {
+            'spin-slow': 'spin 2s linear infinite',
+            'pulse-slow': 'pulse 3s ease-in-out infinite',
+            'fade-in-up': 'fadeInUp 0.8s ease-out',
+            'shimmer': 'shimmer 2s infinite',
+          },
+          keyframes: {
+            fadeInUp: {
+              '0%': {opacity: '0', transform: 'translateY(30px)'},
+              '100%': {opacity: '1', transform: 'translateY(0)'}
+            },
+            shimmer: {
+              '0%': {backgroundPosition: '-200% 0'},
+              '100%': {backgroundPosition: '200% 0'}
+            }
+          },
+          backdropBlur: {
+            'xs': '2px',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="gradient-bg min-h-screen text-white font-inter floating-particles">
+  <div class="min-h-screen p-4 lg:p-8">
+    <div class="max-w-7xl mx-auto">
+      <!-- Header -->
+      <div class="text-center mb-8 lg:mb-12">
+        <div class="flex items-center justify-center gap-3 mb-4">
+          <div
+            class="w-12 h-12 lg:w-16 lg:h-16 gradient-primary rounded-2xl flex items-center justify-center text-2xl lg:text-3xl font-bold shadow-2xl">
+            ✨
+          </div>
+          <h1 class="text-4xl lg:text-6xl font-black gradient-text tracking-tight">FLUX</h1>
+        </div>
+        <p class="text-lg lg:text-xl text-white/80 max-w-2xl mx-auto leading-relaxed">
+          Transform your imagination into stunning visuals with cutting-edge AI technology
+        </p>
+      </div>
+
+      <!-- Main Content Grid -->
+      <div class="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+
+        <!-- Left Side - Prompt Input -->
+        <div class="glass-effect rounded-3xl p-6 lg:p-8 shadow-2xl">
+          <div class="space-y-6">
+            <!-- Input Section -->
+            <div>
+              <label class="block text-white/70 text-sm font-semibold mb-3 uppercase tracking-wider">
+                Describe Your Vision
+              </label>
+              <textarea id="prompt"
+                placeholder="Describe the image you want to create in detail... Be creative and specific for the best results!"
+                class="w-full h-32 lg:h-40 p-4 bg-white/5 border-2 border-white/10 rounded-2xl text-white placeholder-white/50 resize-none focus:outline-none focus:border-purple-400/60 focus:bg-white/10 focus:ring-4 focus:ring-purple-400/10 transition-all duration-300 text-base leading-relaxed"
+                autocomplete="off"></textarea>
+            </div>
+
+            <!-- Recent Prompts -->
+            <div id="recentPrompts" class="hidden space-y-3">
+              <p class="text-white/60 text-sm font-medium">Recent Prompts:</p>
+              <div id="recentPromptsList" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <!-- Example Tags -->
+            <div class="space-y-3">
+              <p class="text-white/60 text-sm font-medium">Quick Ideas:</p>
+              <div class="flex flex-wrap gap-2">
+                <button onclick="setPrompt('A majestic dragon soaring through clouds at sunset')"
+                  class="px-3 py-2 bg-white/5 border border-white/10 rounded-full text-xs text-white/70 hover:bg-white/10 hover:text-white/90 hover:-translate-y-0.5 transition-all duration-200">
+                  Fantasy Dragon
+                </button>
+                <button onclick="setPrompt('Cyberpunk cityscape with neon lights and flying cars')"
+                  class="px-3 py-2 bg-white/5 border border-white/10 rounded-full text-xs text-white/70 hover:bg-white/10 hover:text-white/90 hover:-translate-y-0.5 transition-all duration-200">
+                  Cyberpunk City
+                </button>
+                <button onclick="setPrompt('Serene mountain lake with perfect reflections')"
+                  class="px-3 py-2 bg-white/5 border border-white/10 rounded-full text-xs text-white/70 hover:bg-white/10 hover:text-white/90 hover:-translate-y-0.5 transition-all duration-200">
+                  Nature Scene
+                </button>
+                <button onclick="setPrompt('Abstract geometric art in vibrant colors')"
+                  class="px-3 py-2 bg-white/5 border border-white/10 rounded-full text-xs text-white/70 hover:bg-white/10 hover:text-white/90 hover:-translate-y-0.5 transition-all duration-200">
+                  Abstract Art
+                </button>
+              </div>
+            </div>
+
+            <!-- Generate Button -->
+            <button onclick="generate()" id="generateBtn"
+              class="w-full py-4 px-6 gradient-primary rounded-2xl font-semibold text-lg text-white shadow-2xl hover:-translate-y-1 hover:shadow-purple-500/25 focus:outline-none focus:ring-4 focus:ring-purple-400/20 transition-all duration-300 relative overflow-hidden group disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none">
+              <span class="relative z-10" id="btnText">✨ Generate Masterpiece</span>
+              <div
+                class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700">
+              </div>
+            </button>
+
+            <!-- Status -->
+            <div id="statusContainer" class="hidden">
+              <div id="status" class="p-4 rounded-xl text-center font-medium backdrop-blur-sm border"></div>
+            </div>
+
+            <!-- Loading -->
+            <div id="loading" class="hidden flex flex-col items-center gap-4 py-8">
+              <div class="w-12 h-12 border-4 border-white/20 border-t-purple-400 rounded-full animate-spin"></div>
+              <p class="text-white/70 animate-pulse">Creating your masterpiece...</p>
+              <div class="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                <div id="progressBar"
+                  class="h-full bg-gradient-to-r from-purple-400 to-pink-400 rounded-full transition-all duration-300 w-0">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side - Generated Image -->
+        <div class="glass-effect rounded-3xl p-6 lg:p-8 shadow-2xl">
+          <div class="space-y-6">
+            <!-- Image Display Area -->
+            <div
+              class="aspect-square bg-white/5 rounded-2xl border-2 border-dashed border-white/20 flex items-center justify-center min-h-[300px] lg:min-h-[400px] relative overflow-hidden">
+              <div id="placeholderContent" class="text-center space-y-4">
+                <div class="w-16 h-16 mx-auto bg-white/10 rounded-2xl flex items-center justify-center text-2xl">
+                  🎨
+                </div>
+                <div class="space-y-2">
+                  <p class="text-white/60 font-medium">Your masterpiece will appear here</p>
+                  <p class="text-white/40 text-sm">Enter a prompt and click generate to start creating</p>
+                </div>
+              </div>
+
+              <!-- Loading placeholder with shimmer effect -->
+              <div id="imageLoadingPlaceholder" class="absolute inset-0 image-placeholder rounded-2xl hidden"></div>
+
+              <img id="output" alt="Generated artwork" decoding="async" fetchpriority="high" loading="lazy"
+                class="absolute inset-0 w-full h-full object-cover rounded-2xl image-loading transition-all duration-500 hidden" />
+            </div>
+
+            <!-- Image Actions -->
+            <div id="imageActions" class="hidden space-y-4">
+              <div class="flex flex-wrap gap-3 justify-center">
+                <button onclick="downloadImage()"
+                  class="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all duration-200 text-sm font-medium">
+                  <span>💾</span> Download
+                </button>
+                <button onclick="shareImage()"
+                  class="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all duration-200 text-sm font-medium">
+                  <span>🔗</span> Share
+                </button>
+                <button onclick="generateVariation()"
+                  class="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all duration-200 text-sm font-medium">
+                  <span>🎨</span> Create Variation
+                </button>
+              </div>
+
+              <!-- Image Info -->
+              <div id="imageInfo" class="text-center p-3 bg-white/5 rounded-xl border border-white/10">
+                <p class="text-white/60 text-sm" id="imageDetails"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="text-center mt-12 lg:mt-16 space-y-4">
+        <p class="text-white/60">Powered by FLUX AI • Where creativity meets technology</p>
+        <div class="flex flex-wrap justify-center gap-6 text-sm">
+          <a href="#" class="text-white/50 hover:text-white/80 transition-colors duration-200">Gallery</a>
+          <a href="#" class="text-white/50 hover:text-white/80 transition-colors duration-200">API</a>
+          <a href="#" class="text-white/50 hover:text-white/80 transition-colors duration-200">About</a>
+          <a href="#" class="text-white/50 hover:text-white/80 transition-colors duration-200">Support</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load remaining styles after critical content -->
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    .floating-particles::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .image-loaded {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      filter: none;
+    }
+
+    .image-loading {
+      opacity: 0.7;
+      transform: scale(0.95) translateY(10px);
+      filter: blur(8px) brightness(0.8);
+    }
+
+    .image-placeholder {
+      background: linear-gradient(45deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.1) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.1) 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+      animation: shimmer 3s ease-in-out infinite;
+    }
+
+    textarea::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    textarea::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+
+    textarea::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 3px;
+    }
+
+    textarea::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.5);
+    }
+  </style>
+
+  <script>
+    let currentImageUrl = null;
+    let currentPrompt = '';
+    let recentPrompts = [];
+    let controller = null;
+
+    // Load recent prompts from localStorage
+    function loadRecentPrompts() {
+      try {
+        const stored = localStorage.getItem('fluxRecentPrompts');
+        if (stored) {
+          recentPrompts = JSON.parse(stored);
+          displayRecentPrompts();
+        }
+      } catch (e) {
+        console.warn('Failed to load recent prompts:', e);
+      }
+    }
+
+    // Save prompt to localStorage
+    function savePromptToHistory(prompt) {
+      try {
+        if (!recentPrompts.includes(prompt)) {
+          recentPrompts.unshift(prompt);
+          recentPrompts = recentPrompts.slice(0, 5);
+          localStorage.setItem('fluxRecentPrompts', JSON.stringify(recentPrompts));
+          displayRecentPrompts();
+        }
+      } catch (e) {
+        console.warn('Failed to save prompt:', e);
+      }
+    }
+
+    // Display recent prompts
+    function displayRecentPrompts() {
+      const container = document.getElementById('recentPrompts');
+      const list = document.getElementById('recentPromptsList');
+
+      if (recentPrompts.length > 0) {
+        container.classList.remove('hidden');
+        list.innerHTML = recentPrompts.map(prompt =>
+          `<button onclick="setPrompt('${prompt.replace(/'/g, "\\'")}')" 
+                   class="px-3 py-2 bg-white/5 border border-white/10 rounded-full text-xs text-white/70 hover:bg-white/10 hover:text-white/90 hover:-translate-y-0.5 transition-all duration-200 max-w-xs truncate">
+             ${prompt.length > 30 ? prompt.substring(0, 30) + '...' : prompt}
+           </button>`
+        ).join('');
+      }
+    }
+
+    function setPrompt(text) {
+      document.getElementById("prompt").value = text;
+      autoResizeTextarea();
+    }
+
+    function autoResizeTextarea() {
+      const textarea = document.getElementById("prompt");
+      textarea.style.height = "auto";
+      textarea.style.height = Math.max(128, textarea.scrollHeight) + "px";
+    }
+
+    function simulateProgress() {
+      const progressBar = document.getElementById('progressBar');
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += Math.random() * 10 + 5;
+        if (progress > 85) progress = 85;
+        progressBar.style.width = progress + '%';
+      }, 400);
+      return interval;
+    }
+
+    async function generate() {
+      const prompt = document.getElementById("prompt").value.trim();
+      const statusContainer = document.getElementById("statusContainer");
+      const status = document.getElementById("status");
+      const output = document.getElementById("output");
+      const button = document.getElementById("generateBtn");
+      const btnText = document.getElementById("btnText");
+      const loading = document.getElementById("loading");
+      const imageActions = document.getElementById("imageActions");
+      const placeholderContent = document.getElementById("placeholderContent");
+      const imageLoadingPlaceholder = document.getElementById("imageLoadingPlaceholder");
+      const imageDetails = document.getElementById("imageDetails");
+      const progressBar = document.getElementById('progressBar');
+
+      if (!prompt) {
+        showStatus("Please enter a detailed prompt to generate your image.", "error");
+        return;
+      }
+
+      // Cancel previous request
+      if (controller) {
+        controller.abort();
+      }
+      controller = new AbortController();
+
+      savePromptToHistory(prompt);
+
+      // Reset UI
+      button.disabled = true;
+      btnText.innerHTML = "🎨 Creating...";
+      loading.classList.remove("hidden");
+      statusContainer.classList.add("hidden");
+      output.classList.add("hidden", "image-loading");
+      output.classList.remove("image-loaded");
+      imageActions.classList.add("hidden");
+      placeholderContent.classList.add("hidden");
+      imageLoadingPlaceholder.classList.remove("hidden");
+      progressBar.style.width = '0%';
+      currentPrompt = prompt;
+
+      const progressInterval = simulateProgress();
+
+      try {
+        const res = await fetch("/generate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify({prompt}),
+          signal: controller.signal
+        });
+
+        // Stop synthetic progress immediately on response
+        clearInterval(progressInterval);
+        progressBar.style.width = '95%';
+
+        if (res.status === 503) {
+          showStatus("⏳ Server busy, retrying in a few seconds…", "error");
+          setTimeout(generate, 3000);           // exponential back-off if you like
+          return;
+        }
+
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        if (data.download_url || data.url) {
+          progressBar.style.width = '100%';
+          currentImageUrl = data.download_url || data.url;
+
+          output.src = currentImageUrl;
+          output.onload = () => {
+            imageLoadingPlaceholder.classList.add("hidden");
+            output.classList.remove("hidden", "image-loading");
+            output.classList.add("image-loaded");
+            imageActions.classList.remove("hidden");
+            imageDetails.textContent = `Image ID: ${data.id || 'Generated'} • Created: ${new Date().toLocaleTimeString()}`;
+          };
+
+          output.onerror = () => {
+            if (data.image_base64) {
+              output.src = "data:image/png;base64," + data.image_base64;
+            } else {
+              throw new Error("Failed to load image");
+            }
+          };
+
+          showStatus(`✨ Your masterpiece is ready!`, "success");
+        } else {
+          throw new Error("No image data received");
+        }
+      } catch (error) {
+        clearInterval(progressInterval);
+
+        if (error.name === 'AbortError') {
+          return;
+        }
+
+        showStatus("❌ Generation failed. Please try again with a different prompt.", "error");
+        placeholderContent.classList.remove("hidden");
+        imageLoadingPlaceholder.classList.add("hidden");
+        console.error("Generation error:", error);
+      } finally {
+        button.disabled = false;
+        btnText.innerHTML = "✨ Generate Masterpiece";
+        loading.classList.add("hidden");
+        controller = null;
+      }
+    }
+
+    function showStatus(message, type) {
+      const statusContainer = document.getElementById("statusContainer");
+      const status = document.getElementById("status");
+
+      statusContainer.classList.remove("hidden");
+      status.textContent = message;
+      status.className = "p-4 rounded-xl text-center font-medium backdrop-blur-sm border";
+
+      if (type === "success") {
+        status.classList.add("bg-green-500/10", "text-green-300", "border-green-500/30");
+      } else if (type === "error") {
+        status.classList.add("bg-red-500/10", "text-red-300", "border-red-500/30");
+      }
+
+      if (type === "success" || type === "error") {
+        setTimeout(() => statusContainer.classList.add("hidden"), 5000);
+      }
+    }
+
+    function downloadImage() {
+      if (!currentImageUrl) return;
+
+      const link = document.createElement('a');
+      link.download = `flux-generated-${Date.now()}.png`;
+      link.href = currentImageUrl;
+      link.target = '_blank';
+      link.click();
+
+      showStatus("🎉 Download started!", "success");
+    }
+
+    function shareImage() {
+      if (navigator.share && currentImageUrl) {
+        navigator.share({
+          title: 'Check out my AI-generated image!',
+          text: `Created with FLUX AI: "${currentPrompt}"`,
+          url: currentImageUrl
+        }).catch(() => {
+          navigator.clipboard.writeText(currentImageUrl)
+            .then(() => showStatus("🔗 Image URL copied to clipboard!", "success"))
+            .catch(() => showStatus("❌ Failed to share image", "error"));
+        });
+      } else {
+        navigator.clipboard.writeText(currentImageUrl)
+          .then(() => showStatus("🔗 Image URL copied to clipboard!", "success"))
+          .catch(() => showStatus("❌ Failed to copy image URL", "error"));
+      }
+    }
+
+    function generateVariation() {
+      const prompt = document.getElementById("prompt");
+      prompt.value = `${currentPrompt}, different style, variation`;
+      autoResizeTextarea();
+      generate();
+    }
+
+    // Event listeners
+    document.getElementById("prompt").addEventListener("keydown", function (event) {
+      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        generate();
+      }
+    });
+
+    document.getElementById("prompt").addEventListener("input", autoResizeTextarea);
+
+    // Initialize
+    window.addEventListener("load", function () {
+      autoResizeTextarea();
+      loadRecentPrompts();
+    });
+  </script>
+</body>
+
+</html>
