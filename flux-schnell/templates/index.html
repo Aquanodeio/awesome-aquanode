@@ -5,8 +5,6 @@
   <title>FLUX AI • Text-to-Image</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="preconnect" href="/download" crossorigin>
-  <link rel="preconnect" href="https://your-api-host.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap" rel="stylesheet" media="print"
@@ -30,12 +28,6 @@
       background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
       min-height: 100vh;
       color: #fff
-    }
-
-    .container {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 1rem
     }
 
     .glass-effect {
@@ -68,23 +60,13 @@
             'inter': ['Inter', 'system-ui', 'sans-serif'],
           },
           animation: {
-            'spin-slow': 'spin 2s linear infinite',
-            'pulse-slow': 'pulse 3s ease-in-out infinite',
             'fade-in-up': 'fadeInUp 0.8s ease-out',
-            'shimmer': 'shimmer 2s infinite',
           },
           keyframes: {
             fadeInUp: {
               '0%': {opacity: '0', transform: 'translateY(30px)'},
               '100%': {opacity: '1', transform: 'translateY(0)'}
-            },
-            shimmer: {
-              '0%': {backgroundPosition: '-200% 0'},
-              '100%': {backgroundPosition: '200% 0'}
             }
-          },
-          backdropBlur: {
-            'xs': '2px',
           }
         }
       }
@@ -198,11 +180,8 @@
                 </div>
               </div>
 
-              <!-- Loading placeholder with shimmer effect -->
-              <div id="imageLoadingPlaceholder" class="absolute inset-0 image-placeholder rounded-2xl hidden"></div>
-
-              <img id="output" alt="Generated artwork" decoding="async" fetchpriority="high" loading="lazy"
-                class="absolute inset-0 w-full h-full object-cover rounded-2xl image-loading transition-all duration-500 hidden" />
+              <img id="output" alt="Generated artwork" loading="lazy"
+                class="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-0 transition-opacity duration-500 hidden" />
             </div>
 
             <!-- Image Actions -->
@@ -265,28 +244,6 @@
       z-index: -1;
     }
 
-    .image-loaded {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-      filter: none;
-    }
-
-    .image-loading {
-      opacity: 0.7;
-      transform: scale(0.95) translateY(10px);
-      filter: blur(8px) brightness(0.8);
-    }
-
-    .image-placeholder {
-      background: linear-gradient(45deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%),
-        linear-gradient(-45deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%),
-        linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.1) 75%),
-        linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.1) 75%);
-      background-size: 20px 20px;
-      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-      animation: shimmer 3s ease-in-out infinite;
-    }
-
     textarea::-webkit-scrollbar {
       width: 6px;
     }
@@ -307,260 +264,188 @@
   </style>
 
   <script>
-    let currentImageUrl = null;
+    /* --- GLOBAL STATE --- */
+    let currentImageData = null;
     let currentPrompt = '';
     let recentPrompts = [];
     let controller = null;
 
-    // Load recent prompts from localStorage
+    /* --- PROMPT HISTORY --- */
     function loadRecentPrompts() {
       try {
-        const stored = localStorage.getItem('fluxRecentPrompts');
-        if (stored) {
-          recentPrompts = JSON.parse(stored);
-          displayRecentPrompts();
-        }
-      } catch (e) {
-        console.warn('Failed to load recent prompts:', e);
-      }
+        recentPrompts = JSON.parse(localStorage.getItem('fluxRecentPrompts') || '[]');
+        displayRecentPrompts();
+      } catch (e) {console.warn('history load', e);}
     }
-
-    // Save prompt to localStorage
     function savePromptToHistory(prompt) {
-      try {
-        if (!recentPrompts.includes(prompt)) {
-          recentPrompts.unshift(prompt);
-          recentPrompts = recentPrompts.slice(0, 5);
-          localStorage.setItem('fluxRecentPrompts', JSON.stringify(recentPrompts));
-          displayRecentPrompts();
-        }
-      } catch (e) {
-        console.warn('Failed to save prompt:', e);
-      }
+      if (!prompt || recentPrompts.includes(prompt)) return;
+      recentPrompts.unshift(prompt);
+      recentPrompts = recentPrompts.slice(0, 5);
+      localStorage.setItem('fluxRecentPrompts', JSON.stringify(recentPrompts));
+      displayRecentPrompts();
     }
-
-    // Display recent prompts
     function displayRecentPrompts() {
-      const container = document.getElementById('recentPrompts');
       const list = document.getElementById('recentPromptsList');
-
-      if (recentPrompts.length > 0) {
-        container.classList.remove('hidden');
-        list.innerHTML = recentPrompts.map(prompt =>
-          `<button onclick="setPrompt('${prompt.replace(/'/g, "\\'")}')" 
-                   class="px-3 py-2 bg-white/5 border border-white/10 rounded-full text-xs text-white/70 hover:bg-white/10 hover:text-white/90 hover:-translate-y-0.5 transition-all duration-200 max-w-xs truncate">
-             ${prompt.length > 30 ? prompt.substring(0, 30) + '...' : prompt}
-           </button>`
-        ).join('');
-      }
+      const wrap = document.getElementById('recentPrompts');
+      if (!list) return;
+      if (recentPrompts.length === 0) {wrap.classList.add('hidden'); return;}
+      wrap.classList.remove('hidden');
+      list.innerHTML = recentPrompts
+        .map(p => `<button onclick="setPrompt('${p.replace(/'/g, "\\'")}')" 
+                   class="px-3 py-2 bg-white/5 border border-white/10 rounded-full text-xs text-white/70 hover:bg-white/10 hover:text-white/90 transition-all duration-200 max-w-xs truncate">
+                ${p.length > 30 ? p.slice(0, 30) + '…' : p}
+              </button>`).join('');
     }
-
     function setPrompt(text) {
-      document.getElementById("prompt").value = text;
+      const ta = document.getElementById('prompt');
+      ta.value = text;
       autoResizeTextarea();
     }
 
+    /* --- UI HELPERS --- */
     function autoResizeTextarea() {
-      const textarea = document.getElementById("prompt");
-      textarea.style.height = "auto";
-      textarea.style.height = Math.max(128, textarea.scrollHeight) + "px";
+      const ta = document.getElementById('prompt');
+      ta.style.height = 'auto';
+      ta.style.height = Math.max(128, ta.scrollHeight) + 'px';
     }
-
     function simulateProgress() {
-      const progressBar = document.getElementById('progressBar');
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += Math.random() * 10 + 5;
-        if (progress > 85) progress = 85;
-        progressBar.style.width = progress + '%';
+      const bar = document.getElementById('progressBar');
+      let p = 0;
+      const iv = setInterval(() => {
+        p = Math.min(85, p + (Math.random() * 10 + 5));
+        bar.style.width = p + '%';
       }, 400);
-      return interval;
+      return iv;
+    }
+    function showStatus(msg, type) {
+      const box = document.getElementById('statusContainer');
+      const st = document.getElementById('status');
+      box.classList.remove('hidden');
+      st.textContent = msg;
+      st.className =
+        'p-4 rounded-xl text-center font-medium backdrop-blur-sm border ' +
+        (type === 'success'
+          ? 'bg-green-500/10 text-green-300 border-green-500/30'
+          : 'bg-red-500/10 text-red-300 border-red-500/30');
+      setTimeout(() => box.classList.add('hidden'), 5000);
     }
 
+    /* --- MAIN GENERATE FLOW --- */
     async function generate() {
-      const prompt = document.getElementById("prompt").value.trim();
-      const statusContainer = document.getElementById("statusContainer");
-      const status = document.getElementById("status");
-      const output = document.getElementById("output");
-      const button = document.getElementById("generateBtn");
-      const btnText = document.getElementById("btnText");
-      const loading = document.getElementById("loading");
-      const imageActions = document.getElementById("imageActions");
-      const placeholderContent = document.getElementById("placeholderContent");
-      const imageLoadingPlaceholder = document.getElementById("imageLoadingPlaceholder");
-      const imageDetails = document.getElementById("imageDetails");
-      const progressBar = document.getElementById('progressBar');
+      const prompt = document.getElementById('prompt').value.trim();
+      if (!prompt) return showStatus('Enter a prompt', 'error');
 
-      if (!prompt) {
-        showStatus("Please enter a detailed prompt to generate your image.", "error");
-        return;
-      }
+      /* UI elements */
+      const out = document.getElementById('output');
+      const actions = document.getElementById('imageActions');
+      const placeholder = document.getElementById('placeholderContent');
+      const info = document.getElementById('imageDetails');
+      const btn = document.getElementById('generateBtn');
+      const btnText = document.getElementById('btnText');
+      const loadWrap = document.getElementById('loading');
+      const bar = document.getElementById('progressBar');
 
-      // Cancel previous request
-      if (controller) {
-        controller.abort();
-      }
+      /* abort any prior run */
+      if (controller) controller.abort();
       controller = new AbortController();
 
+      /* reset UI */
+      btn.disabled = true;
+      btnText.textContent = '🎨 Creating…';
+      loadWrap.classList.remove('hidden');
+      out.classList.add('hidden'); out.style.opacity = 0;
+      actions.classList.add('hidden'); placeholder.classList.remove('hidden');
+      bar.style.width = '0%';
+
+      const progTimer = simulateProgress();
       savePromptToHistory(prompt);
-
-      // Reset UI
-      button.disabled = true;
-      btnText.innerHTML = "🎨 Creating...";
-      loading.classList.remove("hidden");
-      statusContainer.classList.add("hidden");
-      output.classList.add("hidden", "image-loading");
-      output.classList.remove("image-loaded");
-      imageActions.classList.add("hidden");
-      placeholderContent.classList.add("hidden");
-      imageLoadingPlaceholder.classList.remove("hidden");
-      progressBar.style.width = '0%';
-      currentPrompt = prompt;
-
-      const progressInterval = simulateProgress();
+      currentPrompt = prompt;            // ← FIX
 
       try {
-        const res = await fetch("/generate", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          },
-          body: JSON.stringify({prompt}),
+        const res = await fetch('/generate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({prompt, return_base64: true}),
           signal: controller.signal
         });
+        clearInterval(progTimer); bar.style.width = '95%';
 
-        // Stop synthetic progress immediately on response
-        clearInterval(progressInterval);
-        progressBar.style.width = '95%';
-
-        if (res.status === 503) {
-          showStatus("⏳ Server busy, retrying in a few seconds…", "error");
-          setTimeout(generate, 3000);           // exponential back-off if you like
-          return;
-        }
-
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-
+        if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
+        console.log('API response', data);
 
-        if (data.download_url || data.url) {
-          progressBar.style.width = '100%';
-          currentImageUrl = location.origin + (data.download_url || data.url);
-
-          output.src = currentImageUrl;
-          output.onload = () => {
-            imageLoadingPlaceholder.classList.add("hidden");
-            output.classList.remove("hidden", "image-loading");
-            output.classList.add("image-loaded");
-            imageActions.classList.remove("hidden");
-            imageDetails.textContent = `Image ID: ${data.id || 'Generated'} • Created: ${new Date().toLocaleTimeString()}`;
-          };
-
-          output.onerror = () => {
-            if (data.image_base64) {
-              output.src = "data:image/png;base64," + data.image_base64;
-            } else {
-              throw new Error("Failed to load image");
-            }
-          };
-
-          showStatus(`✨ Your masterpiece is ready!`, "success");
+        /* choose source */
+        if (data.image_base64) {
+          currentImageData = data.image_base64;
+          out.src = 'data:image/png;base64,' + data.image_base64;
+        } else if (data.download_url) {
+          out.src = data.download_url;
         } else {
-          throw new Error("No image data received");
-        }
-      } catch (error) {
-        clearInterval(progressInterval);
-
-        if (error.name === 'AbortError') {
-          return;
+          throw new Error('No image in response');
         }
 
-        showStatus("❌ Generation failed. Please try again with a different prompt.", "error");
-        placeholderContent.classList.remove("hidden");
-        imageLoadingPlaceholder.classList.add("hidden");
-        console.error("Generation error:", error);
+        /* onload / onerror */
+        out.onload = () => {
+          clearInterval(progTimer); bar.style.width = '100%';
+          placeholder.classList.add('hidden');
+          out.classList.remove('hidden'); out.style.opacity = 1;
+          actions.classList.remove('hidden');
+          info.textContent = `ID: ${data.id ?? '—'} • ${new Date().toLocaleTimeString()}`;
+          showStatus('✨ Your masterpiece is ready!', 'success');
+        };
+        out.onerror = () => {
+          if (data.download_url && !out.src.includes(data.download_url)) {
+            console.warn('Base64 failed, retrying via /download');
+            out.src = data.download_url;
+          } else {
+            showStatus('❌ Failed to load image', 'error');
+          }
+        };
+
+      } catch (err) {
+        clearInterval(progTimer);
+        console.error(err);
+        showStatus('❌ Generation failed. Try again.', 'error');
       } finally {
-        button.disabled = false;
-        btnText.innerHTML = "✨ Generate Masterpiece";
-        loading.classList.add("hidden");
+        btn.disabled = false;
+        btnText.textContent = '✨ Generate Masterpiece';
+        loadWrap.classList.add('hidden');
         controller = null;
       }
     }
 
-    function showStatus(message, type) {
-      const statusContainer = document.getElementById("statusContainer");
-      const status = document.getElementById("status");
-
-      statusContainer.classList.remove("hidden");
-      status.textContent = message;
-      status.className = "p-4 rounded-xl text-center font-medium backdrop-blur-sm border";
-
-      if (type === "success") {
-        status.classList.add("bg-green-500/10", "text-green-300", "border-green-500/30");
-      } else if (type === "error") {
-        status.classList.add("bg-red-500/10", "text-red-300", "border-red-500/30");
-      }
-
-      if (type === "success" || type === "error") {
-        setTimeout(() => statusContainer.classList.add("hidden"), 5000);
-      }
-    }
-
+    /* --- EXTRA ACTIONS --- */
     function downloadImage() {
-      if (!currentImageUrl) return;
-
-      const link = document.createElement('a');
-      link.download = `flux-generated-${Date.now()}.png`;
-      link.href = currentImageUrl;
-      link.target = '_blank';
-      link.click();
-
-      showStatus("🎉 Download started!", "success");
+      if (!currentImageData) return;
+      const a = document.createElement('a');
+      a.download = `flux-${Date.now()}.png`;
+      a.href = 'data:image/png;base64,' + currentImageData;
+      a.click();
+      showStatus('🎉 Download started!', 'success');
     }
-
     function shareImage() {
-      if (navigator.share && currentImageUrl) {
-        navigator.share({
-          title: 'Check out my AI-generated image!',
-          text: `Created with FLUX AI: "${currentPrompt}"`,
-          url: currentImageUrl
-        }).catch(() => {
-          navigator.clipboard.writeText(currentImageUrl)
-            .then(() => showStatus("🔗 Image URL copied to clipboard!", "success"))
-            .catch(() => showStatus("❌ Failed to share image", "error"));
-        });
-      } else {
-        navigator.clipboard.writeText(currentImageUrl)
-          .then(() => showStatus("🔗 Image URL copied to clipboard!", "success"))
-          .catch(() => showStatus("❌ Failed to copy image URL", "error"));
-      }
+      if (!navigator.share || !currentImageData) return downloadImage();
+      fetch('data:image/png;base64,' + currentImageData)
+        .then(r => r.blob())
+        .then(b => navigator.share({
+          title: 'FLUX image',
+          files: [new File([b], 'flux.png', {type: 'image/png'})]
+        }))
+        .catch(() => downloadImage());
     }
-
     function generateVariation() {
-      const prompt = document.getElementById("prompt");
-      prompt.value = `${currentPrompt}, different style, variation`;
+      const ta = document.getElementById('prompt');
+      ta.value = `${currentPrompt}, variation`;
       autoResizeTextarea();
       generate();
     }
 
-    // Event listeners
-    document.getElementById("prompt").addEventListener("keydown", function (event) {
-      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
-        event.preventDefault();
-        generate();
-      }
+    /* --- INIT --- */
+    document.getElementById('prompt').addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {e.preventDefault(); generate();}
     });
-
-    document.getElementById("prompt").addEventListener("input", autoResizeTextarea);
-
-    // Initialize
-    window.addEventListener("load", function () {
-      autoResizeTextarea();
-      loadRecentPrompts();
-    });
+    document.getElementById('prompt').addEventListener('input', autoResizeTextarea);
+    window.addEventListener('load', () => {autoResizeTextarea(); loadRecentPrompts();});
   </script>
 </body>
 
