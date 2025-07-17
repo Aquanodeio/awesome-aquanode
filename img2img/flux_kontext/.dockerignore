@@ -1,0 +1,29 @@
+# Common
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.bak
+*.tmp
+*.log
+*.ipynb
+
+# Python
+venv/
+.env
+*.egg-info/
+dist/
+build/
+
+# Git
+.git
+.gitignore
+
+# Models / Data
+*.pt
+*.ckpt
+*.safetensors
+
+# VSCode
+.vscode/

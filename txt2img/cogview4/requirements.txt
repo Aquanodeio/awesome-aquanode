@@ -1,0 +1,12 @@
+diffusers==0.33.1
+torch
+torchvision
+transformers
+fastapi
+uvicorn
+pillow
+pydantic
+accelerate
+sentencepiece
+protobuf
+python-multipart
