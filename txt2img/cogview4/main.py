@@ -2,7 +2,7 @@ import os
 import asyncio
 from diffusers.pipelines.cogview4.pipeline_cogview4 import CogView4Pipeline
 import torch
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from typing import Optional
 import asyncio
 import torch
@@ -13,6 +13,7 @@ from PIL import Image
 import io
 import os
 from fastapi.middleware.cors import CORSMiddleware
+from utils import verify_api_key
 
 app = FastAPI()
 
@@ -61,9 +62,12 @@ async def generate_image(
     seed: Optional[int] = Form(42),
     width: Optional[int] = Form(1024),
     height: Optional[int] = Form(1024),
-    num_inference_steps: Optional[int] = Form(28)
+    num_inference_steps: Optional[int] = Form(28),
+    authorization: str = Header(..., description="Bearer token for API key verification")
     ):
     try:
+        verify_api_key(authorization)
+        
         # Use async lock to ensure only one generation happens at a time
         async with generation_lock:
             torch.cuda.empty_cache()  # Clear GPU memory

@@ -1,15 +1,15 @@
 import asyncio
 import torch
-from diffusers.pipelines.flux.pipeline_flux import FluxPipeline
 import time
-from fastapi import FastAPI, HTTPException, Form, Response
+from fastapi import FastAPI, HTTPException, Form, Response, Header
 from typing import Optional
 from PIL import Image
 import io
 import os
 from fastapi.middleware.cors import CORSMiddleware
-from diffusers.pipelines.auto_pipeline import AutoPipelineForText2Image
 app = FastAPI()
+
+from utils import verify_api_key
 
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")  # Comma-separated list of allowed origins
 
@@ -26,6 +26,7 @@ app.add_middleware(
 pipe = None
 generation_lock = asyncio.Semaphore(int(os.getenv("MAX_CONCURRENT_REQUESTS", "1")))  # Limit concurrent requests
 
+from diffusers.pipelines.flux.pipeline_flux import FluxPipeline
 def initialize_pipeline():
     global pipe
     if pipe is None:
@@ -51,19 +52,25 @@ async def generate_image(
     seed: Optional[int] = Form(42),
     width: Optional[int] = Form(1024),
     height: Optional[int] = Form(1024),
-    num_inference_steps: Optional[int] = Form(28)
+    num_inference_steps: Optional[int] = Form(28),
+    authorization: str = Header(..., description="Bearer token for API key verification")
     ):
+    
     try:
+
+        verify_api_key(authorization)
+
         async with generation_lock:  # Ensure only one generation at a time
-            torch.cuda.empty_cache()  # Clear GPU memory
+            torch.cuda.empty_cache()
             loop = asyncio.get_running_loop()
             
             def generate():
+                
                 pipe.scheduler._step_index = None  # type: ignore # Reset step index
 
-                torch.cuda.empty_cache()  # Clear GPU memory
+                torch.cuda.empty_cache()
                 torch.manual_seed(seed)
-                # Generate image with inference mode for efficiency
+
                 with torch.inference_mode():
                     result = pipe(  # type: ignore
                         prompt=prompt,

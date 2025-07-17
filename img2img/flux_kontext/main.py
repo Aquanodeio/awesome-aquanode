@@ -8,6 +8,7 @@ import os
 from typing import Optional
 from PIL import Image
 import io
+from utils import verify_api_key
 
 port = int(os.getenv("PORT", "8000"))
 
@@ -49,10 +50,13 @@ async def generate_image(
     image: UploadFile = File(...),
     prompt: str = Form(...),
     guidance_scale: Optional[float] = Form(3.5),
-    seed: Optional[int] = Form(42)
+    seed: Optional[int] = Form(42),
+    authorization: str = Form(..., description="Bearer token for API key verification")
 ):
     try:
         async with generation_lock:
+            verify_api_key(authorization)
+            
             loop = asyncio.get_event_loop()
 
             def generate():
