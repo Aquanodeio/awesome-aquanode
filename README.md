@@ -1,13 +1,58 @@
-# Description
-This repo contains the code for the custom dockerfiles used in aquanode.
+# Awesome Aquanode
 
-Most probably all of them are going to be **Models** used for inference.
+Awesome Aquanode is list of awesome resource people can use to familiarize themselves with [Aquanode](https://www.aquanode.io/)
 
-HF_TOKEN is primary requirement in these images while running. 
+This includes images for various models available on our [model-gallery](https://console.aquanode.io/services/inference/models-gallery)
 
-# Guidelines
+You can deploy these models on just few-clicks from [model-gallery](https://console.aquanode.io/services/inference/models-gallery)
 
-0.16: means simple inference on bfloat16 or float16.
-In case that model runs on f32[default precision on HF](which is rare in generative models, this 0.16 might mean that too. Although we will make sure f32 are in 0.32 tag).
+Please submit a pull request if you know any resources that might be helpful to other developers.
 
-And yeah I am gonna move this flux-schnell, but just not now.[we are using publicly available flux-schnell image drycoco/flux-schnell:0.0.3
+---
+## Table of Contents
+---
+### Models
+
+[flux_dev](flux_dev)
+
+[flux_kontext](flux_kontext)
+
+[flux-schnell](flux-schnell)
+
+[cogview4](cogview4)
+
+[deepseek-r1](deepseek-r1)
+
+[deepseek-r1-1.5B](deepseek-r1-1.5B)
+
+[deepseek-r1-14B](deepseek-r1-14B)
+
+[deepseek-r1-32B](deepseek-r1-32B)
+
+[deepseek-r1-70B](deepseek-r1-70B)
+
+[deepseek-r1-8B](deepseek-r1-8B)
+
+[gemma](gemma)
+
+[gemma-2](gemma-2)
+
+[llama3.1](llama3.1)
+
+[llama3.2](llama3.2)
+
+[llama3.3](llama3.3)
+
+[phi](phi)
+
+[phi3](phi3)
+
+[phi3.5](phi3.5)
+
+[qwen-2.5-vl](qwen-2.5-vl)
+
+[qwen2.5](qwen2.5)
+
+[qwen2.5-coder](qwen2.5-coder)
+
+---

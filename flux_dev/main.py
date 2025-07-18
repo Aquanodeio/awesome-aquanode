@@ -1,23 +1,18 @@
-import os
-import asyncio
-from diffusers.pipelines.cogview4.pipeline_cogview4 import CogView4Pipeline
-import torch
-from fastapi import FastAPI, HTTPException
-from typing import Optional
 import asyncio
 import torch
 import time
-from fastapi import FastAPI, HTTPException, Form, Response
+from fastapi import FastAPI, HTTPException, Form, Response, Header
 from typing import Optional
 from PIL import Image
 import io
 import os
 from fastapi.middleware.cors import CORSMiddleware
-
 app = FastAPI()
 
+from utils import verify_api_key
+
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")  # Comma-separated list of allowed origins
-MAX_CONCURRENT_REQUESTS = int(os.getenv("MAX_CONCURRENT_REQUESTS", "1"))  # Limit concurrent requests
+
 # CORS
 app.add_middleware(
     CORSMiddleware,
@@ -29,22 +24,18 @@ app.add_middleware(
 
 # Initialize the pipeline globally
 pipe = None
+generation_lock = asyncio.Semaphore(int(os.getenv("MAX_CONCURRENT_REQUESTS", "1")))  # Limit concurrent requests
 
-# Add async lock to prevent concurrent GPU operations
-# stops VRAM outage
-generation_lock = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
-
+from diffusers.pipelines.flux.pipeline_flux import FluxPipeline
 def initialize_pipeline():
     global pipe
     if pipe is None:
-        print("Loading the CogView pipeline...")
-        pipe = CogView4Pipeline.from_pretrained(
-            "THUDM/CogView4-6B", 
+        print("Loading the FLUX.1-dev pipeline...")
+        pipe = FluxPipeline.from_pretrained(
+            "black-forest-labs/FLUX.1-dev", 
             torch_dtype=torch.bfloat16
         )
-        pipe.enable_model_cpu_offload()  # Enable CPU offloading for memory efficiency
-        pipe.vae.enable_slicing()
-        pipe.vae.enable_tiling()
+        pipe.to("cuda")
         print("Pipeline loaded successfully!")
 
 
@@ -52,7 +43,7 @@ initialize_pipeline()
 
 @app.get('/')
 def read_root():
-    return {"message": "Welcome to the CogView4 image generation API!"}
+    return {"message": "Welcome to the FLUX.1-dev image generation API!"}
 
 @app.post('/generate')
 async def generate_image(
@@ -61,19 +52,25 @@ async def generate_image(
     seed: Optional[int] = Form(42),
     width: Optional[int] = Form(1024),
     height: Optional[int] = Form(1024),
-    num_inference_steps: Optional[int] = Form(28)
+    num_inference_steps: Optional[int] = Form(28),
+    authorization: str = Header(..., description="Bearer token for API key verification")
     ):
+    
     try:
-        # Use async lock to ensure only one generation happens at a time
-        async with generation_lock:
-            torch.cuda.empty_cache()  # Clear GPU memory
+
+        verify_api_key(authorization)
+
+        async with generation_lock:  # Ensure only one generation at a time
+            torch.cuda.empty_cache()
             loop = asyncio.get_running_loop()
             
             def generate():
-                pipe.scheduler._step_index = None  # type: ignore # Reset step index
                 
-                torch.cuda.empty_cache()  # Clear GPU memory
+                pipe.scheduler._step_index = None  # type: ignore # Reset step index
+
+                torch.cuda.empty_cache()
                 torch.manual_seed(seed)
+
                 with torch.inference_mode():
                     result = pipe(  # type: ignore
                         prompt=prompt,
@@ -82,8 +79,7 @@ async def generate_image(
                         num_inference_steps=num_inference_steps or 28,
                         guidance_scale=guidance_scale or 3.5
                     )
-                torch.cuda.empty_cache()  # Clear GPU memory
-                return result.images[0]  # type: ignore
+                    return result.images[0]  # type: ignore
             
             # Offload GPU work to thread (non-blocking)
             t1 = time.time()
@@ -96,10 +92,10 @@ async def generate_image(
             generated_image.save(img_buffer, format='PNG')
             img_buffer.seek(0)
             
-            return Response(
-                    content=img_buffer.getvalue(),
-                    media_type="image/png"
-                )
+        return Response(
+                content=img_buffer.getvalue(),
+                media_type="image/png"
+            )
         
     except Exception as e:
         print(f"Error generating image: {str(e)}")
@@ -107,4 +103,4 @@ async def generate_image(
 
 @app.get('/health')
 def health_check():
-    return {"status": "healthy", "model": "CogView4-6B"}
+    return {"status": "healthy", "model": "FLUX.1-dev"}
