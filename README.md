@@ -13,15 +13,13 @@ Please submit a pull request if you know any resources that might be helpful to 
 ---
 ### Models
 
-[flux_dev](flux_dev)
+[flux-dev](flux-dev)
 
-[flux_kontext](flux_kontext)
+[flux-kontext](flux-kontext)
 
 [flux-schnell](flux-schnell)
 
-[cogview4](cogview4)
-
-[deepseek-r1](deepseek-r1)
+[cogview4-6B](cogview4-6B)
 
 [deepseek-r1-1.5B](deepseek-r1-1.5B)
 
@@ -45,9 +43,9 @@ Please submit a pull request if you know any resources that might be helpful to 
 
 [phi](phi)
 
-[phi3](phi3)
+[phi-3](phi-3)
 
-[phi3.5](phi3.5)
+[phi-3.5](phi-3.5)
 
 [qwen-2.5-vl](qwen-2.5-vl)
 
