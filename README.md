@@ -19,6 +19,40 @@ Please submit a pull request if you know any resources that might be helpful to 
 
 [flux-schnell](flux-schnell)
 
-[cogview4](cogiew4)
+[cogview4](cogview4)
+
+[deepseek-r1](deepseek-r1)
+
+[deepseek-r1-1.5B](deepseek-r1-1.5B)
+
+[deepseek-r1-14B](deepseek-r1-14B)
+
+[deepseek-r1-32B](deepseek-r1-32B)
+
+[deepseek-r1-70B](deepseek-r1-70B)
+
+[deepseek-r1-8B](deepseek-r1-8B)
+
+[gemma](gemma)
+
+[gemma-2](gemma-2)
+
+[llama3.1](llama3.1)
+
+[llama3.2](llama3.2)
+
+[llama3.3](llama3.3)
+
+[phi](phi)
+
+[phi3](phi3)
+
+[phi3.5](phi3.5)
+
+[qwen-2.5-vl](qwen-2.5-vl)
+
+[qwen2.5](qwen2.5)
+
+[qwen2.5-coder](qwen2.5-coder)
 
 ---
