@@ -14,8 +14,11 @@ Please submit a pull request if you know any resources that might be helpful to 
 ### Models
 
 [flux_dev](flux_dev)
+
 [flux_kontext](flux_kontext)
+
 [flux-schnell](flux-schnell)
+
 [cogview4](cogiew4)
 
 ---
