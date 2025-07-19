@@ -1,9 +1,9 @@
-# DeepSeek-R1-1.5B
+# Phi-3.5
 
 ## Usage
 
 ```sh
-cd deepseek-r1-1.5B
+cd phi-3.5-3.8b
 docker build -t {image} .
 docker run -p 7860:7860 {image}
 ```
@@ -19,8 +19,8 @@ pip install transformers torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 
-tokenizer = AutoTokenizer.from_pretrained("deepseek-ai/DeepSeek-R1-Distill-Llama-1.5B")
-model = AutoModelForCausalLM.from_pretrained("deepseek-ai/DeepSeek-R1-Distill-Llama-1.5B", torch_dtype=torch.bfloat16)
+tokenizer = AutoTokenizer.from_pretrained("microsoft/Phi-3.5-mini-instruct")
+model = AutoModelForCausalLM.from_pretrained("microsoft/Phi-3.5-mini-instruct", torch_dtype=torch.bfloat16)
 
 prompt = "What is the meaning of life?"
 inputs = tokenizer(prompt, return_tensors="pt")
@@ -31,4 +31,4 @@ print(response)
 
 ## License
 
-This model is released under the [MIT License](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B/blob/main/LICENSE).
+This model is released under the [MIT License].
