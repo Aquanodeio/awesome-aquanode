@@ -3,9 +3,9 @@
 ## Usage
 
 ```sh
-cd phi3
+cd phi-3-3.8B
 docker build -t {image} .
-docker run -p 11434:11434 {image}
+docker run -p 7860:7860 {image}
 ```
 
 

@@ -5,7 +5,7 @@
 ```sh
 cd qwen-2.5-vl
 docker build -t {image} .
-docker run -p 8000:8000 {image}
+docker run -p 7860:7860 {image}
 ```
 
 

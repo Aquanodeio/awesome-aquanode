@@ -3,12 +3,10 @@
 ## Usage
 
 ```sh
-cd gemma-2
+cd gemma-2-9B
 docker build -t {image} .
-docker run -p 11434:11434 {image}
+docker run -p 7860:7860 {image}
 ```
-
-**checkout /docs for swagger docs**
 
 ---
 

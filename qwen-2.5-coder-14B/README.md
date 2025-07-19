@@ -3,9 +3,9 @@
 ## Usage
 
 ```sh
-cd qwen2.5-coder
+cd qwen-2.5-coder-14B
 docker build -t {image} .
-docker run -p 11434:11434 {image}
+docker run -p 7860:7860 {image}
 ```
 
 ---

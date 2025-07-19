@@ -3,9 +3,9 @@
 ## Usage
 
 ```sh
-cd llama3.2
+cd llama3.2-3B
 docker build -t {image} .
-docker run -p 11434:11434 {image}
+docker run -p 7860:7860 {image}
 ```
 
 
