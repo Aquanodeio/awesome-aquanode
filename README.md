@@ -31,26 +31,26 @@ Please submit a pull request if you know any resources that might be helpful to 
 
 [deepseek-r1-8B](deepseek-r1-8B)
 
-[gemma](gemma)
+[gemma-7B](gemma-7B)
 
-[gemma-2](gemma-2)
+[gemma-2-9B](gemma-2-9B)
 
-[llama3.1](llama3.1)
+[llama3.1-8B](llama3.1-8B)
 
-[llama3.2](llama3.2)
+[llama3.2-3B](llama3.2-3B)
 
-[llama3.3](llama3.3)
+[llama3.3-70B](llama3.3-70B)
 
-[phi](phi)
+[phi-1-2.7B](phi-1-2.7B)
 
-[phi-3](phi-3)
+[phi-3-3.8B](phi-3-3.8B)
 
-[phi-3.5](phi-3.5)
+[phi-3.5-3.8b](phi-3.5-3.8b)
 
-[qwen-2.5-vl](qwen-2.5-vl)
+[qwen-2.5-14B](qwen-2.5-14B)
 
-[qwen2.5](qwen2.5)
+[qwen-2.5-coder-14B](qwen-2.5-coder-14B)
 
-[qwen2.5-coder](qwen2.5-coder)
+[qwen-2.5-vl-7B](qwen-2.5-vl-7B)
 
 ---

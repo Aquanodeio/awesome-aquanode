@@ -5,7 +5,7 @@ FROM ollama/ollama:latest
 RUN apt-get update && apt-get install -y curl nginx libnginx-mod-http-lua
 
 # Set the environment variable for the model
-ENV OLLAMA_MODEL=deepseek-r1:8b
+ENV OLLAMA_MODEL=phi:2.7b
 
 # Create nginx configuration
 RUN rm -f /etc/nginx/sites-enabled/default
