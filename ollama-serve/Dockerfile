@@ -1,8 +1,13 @@
 # Use the base Ollama image
 FROM ollama/ollama:latest
 
-# Install curl, nginx, and lua module
-RUN apt-get update && apt-get install -y curl nginx libnginx-mod-http-lua
+# Install curl, nginx, lua module, and lua-cjson
+RUN apt-get update && apt-get install -y \
+    curl \
+    nginx \
+    libnginx-mod-http-lua \
+    lua-cjson \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create nginx configuration
 RUN rm -f /etc/nginx/sites-enabled/default
@@ -14,31 +19,62 @@ server {
     server_name _;
     
     location / {
-        # Validate Bearer token using Lua
+        # Validate API key using Lua
         access_by_lua_block {
-            local auth_header = ngx.var.http_authorization
-            local expected_token = os.getenv("AUTH_TOKEN")
+            local expected_token = os.getenv("API_KEY")
+            local token = nil
             
-            if not auth_header then
-                ngx.status = 401
-                ngx.header.content_type = "application/json"
-                ngx.say('{"error": "Unauthorized - No authorization header"}')
-                ngx.exit(401)
+            -- Try to get token from query parameter
+            local args = ngx.req.get_uri_args()
+            token = args.api_key or args.key or args.token
+            
+            -- If not found in query params, try request body for POST requests
+            if not token and ngx.var.request_method == "POST" then
+                ngx.req.read_body()
+                local body_data = ngx.req.get_body_data()
+                if body_data then
+                    local json = require "cjson"
+                    local ok, body_table = pcall(json.decode, body_data)
+                    if ok and body_table then
+                        token = body_table.api_key or body_table.key or body_table.token
+                        
+                        -- Remove token from body and set modified body
+                        if token then
+                            body_table.api_key = nil
+                            body_table.key = nil
+                            body_table.token = nil
+                            local new_body = json.encode(body_table)
+                            ngx.req.set_body_data(new_body)
+                        end
+                    end
+                end
             end
             
-            local token = auth_header:match("Bearer%s+(.+)")
             if not token then
                 ngx.status = 401
                 ngx.header.content_type = "application/json"
-                ngx.say('{"error": "Unauthorized - Invalid Bearer token format"}')
+                ngx.say('{"error": "Unauthorized - No API key provided. Include api_key parameter in query string or request body"}')
                 ngx.exit(401)
             end
             
             if not expected_token or token ~= expected_token then
                 ngx.status = 401
                 ngx.header.content_type = "application/json"
-                ngx.say('{"error": "Unauthorized - Invalid token"}')
+                ngx.say('{"error": "Unauthorized - Invalid API key"}')
                 ngx.exit(401)
+            end
+            
+            -- Remove the api_key from query string before proxying
+            if ngx.req.get_uri_args().api_key or ngx.req.get_uri_args().key or ngx.req.get_uri_args().token then
+                local args = ngx.req.get_uri_args()
+                args.api_key = nil
+                args.key = nil
+                args.token = nil
+                local new_args = {}
+                for k, v in pairs(args) do
+                    table.insert(new_args, k .. "=" .. tostring(v))
+                end
+                ngx.var.args = table.concat(new_args, "&")
             end
         }
         
@@ -68,8 +104,8 @@ EOF
 RUN ln -s /etc/nginx/sites-available/ollama-proxy /etc/nginx/sites-enabled/
 
 # Create nginx.conf to load lua module
-RUN cat > /etc/nginx/nginx.conf << EOF
-env AUTH_TOKEN;
+RUN cat > /etc/nginx/nginx.conf << 'EOF'
+env API_KEY;
 user www-data;
 worker_processes auto;
 pid /run/nginx.pid;
@@ -102,11 +138,47 @@ http {
 }
 EOF
 
+# Create startup script
+RUN cat > /start.sh << 'EOF'
+#!/bin/bash
+set -e
+
+# Start Ollama in background
+echo "Starting Ollama server..."
+/bin/ollama serve &
+
+# Wait for Ollama to be ready
+echo "Waiting for Ollama to be ready..."
+while ! curl -s http://localhost:11434/api/tags > /dev/null; do 
+    sleep 1
+done
+
+# Pull the model if specified
+if [ ! -z "$OLLAMA_MODEL" ]; then
+    echo "Pulling model: $OLLAMA_MODEL"
+    /bin/ollama pull $OLLAMA_MODEL
+    
+    # Test the model
+    echo "Testing model..."
+    /bin/ollama run $OLLAMA_MODEL 'Hello' || true
+fi
+
+# Start nginx
+echo "Starting nginx..."
+exec nginx -g 'daemon off;'
+
+# Keep container running
+echo "Setup complete. Server running on port 7860"
+tail -f /dev/null
+EOF
+
+RUN chmod +x /start.sh
+
 # Expose only the reverse proxy port
 EXPOSE 7860
 
 # Override the base image's ENTRYPOINT
 ENTRYPOINT []
 
-# Start script that runs both Ollama and nginx
-CMD ["/bin/sh", "-c", "/bin/ollama serve & while ! curl -s http://localhost:11434/api/tags > /dev/null; do sleep 1; done && /bin/ollama pull $OLLAMA_MODEL && /bin/ollama run $OLLAMA_MODEL 'Hello' && nginx -g 'daemon off;' & tail -f /dev/null"]
+# Use the startup script
+CMD ["/start.sh"]
