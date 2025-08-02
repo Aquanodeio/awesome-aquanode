@@ -3,7 +3,7 @@ import torch
 import time
 import os
 import io
-from fastapi import FastAPI, HTTPException, Form, Response, Header
+from fastapi import FastAPI, HTTPException, Form, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 from PIL import Image
@@ -53,11 +53,10 @@ async def generate_image(
     width: Optional[int] = Form(1024),
     height: Optional[int] = Form(1024),
     num_inference_steps: Optional[int] = Form(4),
-    authorization: str = Header(..., description="Bearer token for API key verification")
+    api_key: bool = Depends(verify_api_key)
     ):
     
     try:
-        verify_api_key(authorization)
 
         async with generation_lock:  # Ensure only one generation at a time
             torch.cuda.empty_cache()
@@ -101,4 +100,10 @@ async def generate_image(
 
 @app.get('/health')
 def health_check():
-    return {"status": "healthy", "model": "FLUX.1-schnell"}
+    try:
+        if pipe is None:
+            initialize_pipeline()
+        return {"status": "healthy", "model": "FLUX.1-schnell"}
+    except Exception as e:
+        print(f"Health check failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")

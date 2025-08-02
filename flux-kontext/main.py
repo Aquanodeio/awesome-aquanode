@@ -2,7 +2,7 @@ import asyncio
 import torch
 from diffusers.pipelines.flux.pipeline_flux_kontext import FluxKontextPipeline
 import time
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Response
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from typing import Optional
@@ -51,11 +51,10 @@ async def generate_image(
     prompt: str = Form(...),
     guidance_scale: Optional[float] = Form(3.5),
     seed: Optional[int] = Form(42),
-    authorization: str = Form(..., description="Bearer token for API key verification")
+    api_key: bool = Depends(verify_api_key),
 ):
     try:
         async with generation_lock:
-            verify_api_key(authorization)
             
             loop = asyncio.get_event_loop()
 
@@ -102,3 +101,13 @@ async def generate_image(
     except Exception as e:
         print(f"Error generating image: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get('/health')
+def health_check():
+    try:
+        if pipe is None:
+            initialize_pipeline()
+        return {"status": "healthy", "model": "FLUX.1-Kontext"}
+    except Exception as e:
+        print(f"Health check failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")

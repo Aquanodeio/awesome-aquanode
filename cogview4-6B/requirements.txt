@@ -1,12 +1,13 @@
-diffusers==0.33.1
-torch
-torchvision
+torch --index-url https://download.pytorch.org/whl/cu128
+torchvision --index-url https://download.pytorch.org/whl/cu128
 transformers
+sentencepiece
 fastapi
 uvicorn
 pillow
 pydantic
 accelerate
-sentencepiece
+diffusers==0.33.1
+ninja
 protobuf
 python-multipart

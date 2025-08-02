@@ -7,7 +7,9 @@ uvicorn
 pillow
 pydantic
 accelerate
-git+https://github.com/huggingface/diffusers.git
+diffusers
 ninja
 protobuf
 python-multipart
+packaging
+para-attn

@@ -1,4 +1,4 @@
-# VS-CODE with full CUDA support
+# VS-CODE with full CUDA-devel support
 
 Image:
 

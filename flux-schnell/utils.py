@@ -1,17 +1,9 @@
-from fastapi import Header, HTTPException
+from fastapi import Query, HTTPException
 import os
 
-API_KEY = os.getenv("AUTH_TOKEN", "auth_token")
+API_KEY = os.getenv("API_KEY", "auth_token")
 
-def verify_api_key(authorization: str = Header(...)):
-    try:
-        if not authorization.startswith("Bearer "):
-            raise HTTPException(status_code=401, detail="Invalid authorization header")
-        
-        api_key = authorization.split(" ")[1]
-        if api_key != API_KEY:
-            raise HTTPException(status_code=403, detail="Forbidden: Invalid API key")
-        
-        return {"verify": "true"}
-    except Exception as e:
-        raise HTTPException(status_code=503, detail=f"Service unavailable: {str(e)}")
+def verify_api_key(api_key: str = Query(..., description="API key for authentication")):
+    if api_key != API_KEY:
+        raise HTTPException(status_code=403, detail="Forbidden: Invalid API key")
+    return True

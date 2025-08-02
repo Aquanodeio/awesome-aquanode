@@ -1,11 +1,13 @@
 import asyncio
 import torch
 import time
-from fastapi import FastAPI, HTTPException, Form, Response, Header
+from fastapi import FastAPI, HTTPException, Form, Response, Depends
 from typing import Optional
 from PIL import Image
 import io
 import os
+from fastapi.middleware.cors import CORSMiddleware
+from para_attn.first_block_cache.diffusers_adapters import apply_cache_on_pipe
 from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 
@@ -30,13 +32,22 @@ from diffusers.pipelines.flux.pipeline_flux import FluxPipeline
 def initialize_pipeline():
     global pipe
     if pipe is None:
-        print("Loading the FLUX.1-dev pipeline...")
+        print("Loading the FLUX.1-dev FP8 optimized pipeline...")
+                
+        # Load pipeline
         pipe = FluxPipeline.from_pretrained(
-            "black-forest-labs/FLUX.1-dev", 
-            torch_dtype=torch.bfloat16
+            "black-forest-labs/FLUX.1-dev",
+            torch_dtype=torch.bfloat16,
+        ).to("cuda")
+        
+
+        # Apply First Block Cache with optimized threshold for FP8
+        apply_cache_on_pipe(
+            pipe,
+            residual_diff_threshold=0.12  # Larger value needed for FP8 quantization
         )
-        pipe.to("cuda")
-        print("Pipeline loaded successfully!")
+        
+        print("para-attn optimized pipeline loaded successfully!")
 
 
 initialize_pipeline()
@@ -53,12 +64,10 @@ async def generate_image(
     width: Optional[int] = Form(1024),
     height: Optional[int] = Form(1024),
     num_inference_steps: Optional[int] = Form(28),
-    authorization: str = Header(..., description="Bearer token for API key verification")
+    api_key: bool = Depends(verify_api_key)
     ):
     
     try:
-
-        verify_api_key(authorization)
 
         async with generation_lock:  # Ensure only one generation at a time
             torch.cuda.empty_cache()
@@ -68,7 +77,6 @@ async def generate_image(
                 
                 pipe.scheduler._step_index = None  # type: ignore # Reset step index
 
-                torch.cuda.empty_cache()
                 torch.manual_seed(seed)
 
                 with torch.inference_mode():
@@ -103,4 +111,10 @@ async def generate_image(
 
 @app.get('/health')
 def health_check():
-    return {"status": "healthy", "model": "FLUX.1-dev"}
+    try:
+        if pipe is None:
+            initialize_pipeline()
+        return {"status": "healthy", "model": "FLUX.1-dev"}
+    except Exception as e:
+        print(f"Health check failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")

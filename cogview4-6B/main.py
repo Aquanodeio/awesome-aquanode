@@ -2,12 +2,8 @@ import os
 import asyncio
 from diffusers.pipelines.cogview4.pipeline_cogview4 import CogView4Pipeline
 import torch
-from fastapi import FastAPI, HTTPException, Header
-from typing import Optional
-import asyncio
-import torch
 import time
-from fastapi import FastAPI, HTTPException, Form, Response
+from fastapi import FastAPI, HTTPException, Form, Response, Depends
 from typing import Optional
 from PIL import Image
 import io
@@ -63,11 +59,9 @@ async def generate_image(
     width: Optional[int] = Form(1024),
     height: Optional[int] = Form(1024),
     num_inference_steps: Optional[int] = Form(28),
-    authorization: str = Header(..., description="Bearer token for API key verification")
+    api_key: bool = Depends(verify_api_key)
     ):
     try:
-        verify_api_key(authorization)
-        
         # Use async lock to ensure only one generation happens at a time
         async with generation_lock:
             torch.cuda.empty_cache()  # Clear GPU memory
@@ -111,4 +105,11 @@ async def generate_image(
 
 @app.get('/health')
 def health_check():
-    return {"status": "healthy", "model": "CogView4-6B"}
+    try:
+        if pipe is None:
+            initialize_pipeline()
+            
+        return {"status": "healthy", "model": "CogView4-6B"}
+    except Exception as e:
+        print(f"Health check failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Service is not healthy")
