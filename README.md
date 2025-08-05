@@ -11,7 +11,7 @@ Please submit a pull request if you know any resources that might be helpful to 
 ---
 ## Table of Contents
 ---
-### Models
+### Image Generation Models
 
 [flux-dev](flux-dev)
 
@@ -21,36 +21,10 @@ Please submit a pull request if you know any resources that might be helpful to 
 
 [cogview4-6B](cogview4-6B)
 
-[deepseek-r1-1.5B](deepseek-r1-1.5B)
+### Serving Solutions For Image-Text to Text
 
-[deepseek-r1-14B](deepseek-r1-14B)
+[ollama-serve](ollama-serve)
 
-[deepseek-r1-32B](deepseek-r1-32B)
-
-[deepseek-r1-70B](deepseek-r1-70B)
-
-[deepseek-r1-8B](deepseek-r1-8B)
-
-[gemma](gemma)
-
-[gemma-2](gemma-2)
-
-[llama3.1](llama3.1)
-
-[llama3.2](llama3.2)
-
-[llama3.3](llama3.3)
-
-[phi](phi)
-
-[phi-3](phi-3)
-
-[phi-3.5](phi-3.5)
-
-[qwen-2.5-vl](qwen-2.5-vl)
-
-[qwen2.5](qwen2.5)
-
-[qwen2.5-coder](qwen2.5-coder)
+[vllm-serve](vllm-serve)
 
 ---
